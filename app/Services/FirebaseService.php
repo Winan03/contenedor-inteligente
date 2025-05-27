@@ -18,9 +18,26 @@ class FirebaseService
         $factory = new Factory();
 
         if (str_starts_with($credentials, 'http')) {
-            $json = Http::get($credentials)->body();  // descarga desde S3
-            $factory = $factory->withServiceAccount($json);
+            // Descargar el JSON desde S3
+            $response = Http::get($credentials);
+            
+            if ($response->failed()) {
+                throw new \Exception('No se pudo descargar las credenciales desde: ' . $credentials);
+            }
+            
+            $json = $response->body();
+            
+            // Decodificar el JSON a un array asociativo
+            $credentialsArray = json_decode($json, true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \Exception('Error al decodificar las credenciales JSON: ' . json_last_error_msg());
+            }
+            
+            // Pasar el array decodificado, no la cadena JSON
+            $factory = $factory->withServiceAccount($credentialsArray);
         } else {
+            // Usar archivo local
             $factory = $factory->withServiceAccount(base_path($credentials));
         }
 
@@ -45,7 +62,7 @@ class FirebaseService
 
             if ($snapshot->exists()) {
                 $value = $snapshot->getValue();
-                Log::info('Contenedores obtenidos:', $value); // <--- añade esta línea para depurar
+                Log::info('Contenedores obtenidos:', $value);
                 return $value;
             }
 
@@ -55,7 +72,6 @@ class FirebaseService
             return [];
         }
     }
-
 
     /**
      * Obtener un contenedor específico
