@@ -1,6 +1,6 @@
 <?php
 
 return [
-    'credentials' => base_path(env('FIREBASE_CREDENTIALS', 'firebase_credentials.json')),
+    'credentials' => env('FIREBASE_CREDENTIALS'),
     'database_url' => env('FIREBASE_DATABASE_URL'),
 ];

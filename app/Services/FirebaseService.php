@@ -13,17 +13,24 @@ class FirebaseService
 
     public function __construct()
     {
-        try {
-            // Configuración de Firebase usando variables de entorno
-            $this->factory = (new Factory)
-                ->withServiceAccount(config('firebase.credentials'))
-                ->withDatabaseUri(config('firebase.database_url'));
-            
-            $this->database = $this->factory->createDatabase();
-        } catch (\Exception $e) {
-            Log::error('Firebase initialization error: ' . $e->getMessage());
-            throw $e;
+        $credentials = config('firebase.credentials');
+        $factory = new Factory();
+
+        if (str_starts_with($credentials, 'http')) {
+            $json = Http::get($credentials)->body();  // descarga desde S3
+            $factory = $factory->withServiceAccount($json);
+        } else {
+            $factory = $factory->withServiceAccount(base_path($credentials));
         }
+
+        $this->database = $factory
+            ->withDatabaseUri(config('firebase.database_url'))
+            ->createDatabase();
+    }
+
+    public function getDatabase(): Database
+    {
+        return $this->database;
     }
 
     /**
